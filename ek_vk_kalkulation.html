@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Truck Doctor – Kalkulator</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Outfit:wght@400;500;600;700;800&display=swap');
+:root{--bg:#080d1a;--cd:#0e1528;--cd2:#141d34;--ln:#1c2a4a;--tx:#e4eaf5;--mt:#7b8db5;--dm:#4a5a80;--bl:#3d7aff;--bl2:#6fa0ff;--gn:#00d68f;--or:#ff8c2e;--rd:#ff4757}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--tx);font-size:13px}
+.mx{max-width:580px;margin:0 auto;padding:10px 12px 60px}
+h1{font-size:1.1rem;font-weight:800}h1 span{color:var(--bl2)}
+.sub{color:var(--mt);font-size:.7rem}
+
+.tabs{display:flex;gap:4px;margin:8px 0}
+.tab{flex:1;padding:8px 4px;border:1px solid var(--ln);border-radius:10px;background:var(--cd);color:var(--mt);font-family:inherit;font-size:.75rem;font-weight:700;cursor:pointer;text-align:center}
+.tab.on{background:var(--bl);color:#fff;border-color:var(--bl)}
+.pnl{display:none}.pnl.on{display:block}
+
+.c{background:var(--cd);border:1px solid var(--ln);border-radius:10px;padding:8px 10px;margin-top:6px}
+.ct{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bl2);margin-bottom:4px}
+
+/* Inline row: label + input side by side */
+.r{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.r:last-child{margin-bottom:0}
+.r label{flex:1;font-size:.7rem;font-weight:600;color:var(--mt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.r input,.r select{width:120px;flex-shrink:0;padding:6px 8px;border:1px solid rgba(61,122,255,.25);border-radius:6px;background:rgba(61,122,255,.06);color:var(--tx);font-family:'JetBrains Mono',monospace;font-size:.82rem;text-align:right;-webkit-appearance:none}
+.r input:focus,.r select:focus{outline:0;border-color:var(--bl)}
+.r .u{font-size:.6rem;color:var(--dm);width:14px;flex-shrink:0;text-align:right}
+
+/* 2-col rows */
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:4px}
+.r2:last-child{margin-bottom:0}
+.r2 .r{margin-bottom:0}
+
+/* Subtotal */
+.st{display:flex;justify-content:space-between;padding:4px 8px;border-radius:6px;background:var(--cd2);font-size:.75rem;font-weight:600;margin-top:4px}
+.st .v{font-family:'JetBrains Mono',monospace;color:var(--bl2)}
+
+/* Result inline */
+.rx{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:10px;margin-top:6px}
+.rx.bl{background:rgba(61,122,255,.08);border:1px solid rgba(61,122,255,.2)}
+.rx.gn{background:rgba(0,214,143,.08);border:1px solid rgba(0,214,143,.2)}
+.rx.or{background:rgba(255,140,46,.08);border:1px solid rgba(255,140,46,.2)}
+.rx.rd{background:rgba(255,71,87,.08);border:1px solid rgba(255,71,87,.2)}
+.rx .rl{font-size:.65rem;font-weight:700;color:var(--mt);text-transform:uppercase;letter-spacing:.06em}
+.rx .rv{font-family:'JetBrains Mono',monospace;font-size:1.15rem;font-weight:700}
+.rx .rv.bl{color:var(--bl2)}.rx .rv.gn{color:var(--gn)}.rx .rv.or{color:var(--or)}.rx .rv.rd{color:var(--rd)}
+.rx .rs{font-size:.58rem;color:var(--dm)}
+
+/* Small grid */
+.g{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:4px}
+.g2{grid-template-columns:1fr 1fr}
+.gi{background:var(--cd2);border-radius:6px;padding:5px 6px;text-align:center}
+.gi .l{font-size:.52rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--dm)}
+.gi .v{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:700}
+
+/* Bar */
+.bar{height:6px;border-radius:3px;background:var(--cd2);margin-top:4px;overflow:hidden}
+.bar-f{height:100%;border-radius:3px;transition:width .3s,background .3s}
+.bar-l{display:flex;justify-content:space-between;font-size:.5rem;color:var(--dm);margin-top:1px}
+
+.info{font-size:.55rem;color:var(--dm);margin-top:6px;padding:4px 6px;border-radius:4px;background:rgba(61,122,255,.03);border:1px solid rgba(61,122,255,.05)}
+.sep{height:1px;background:var(--ln);margin:4px 0}
+
+@media(max-width:400px){.r input,.r select{width:100px}.g{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<div class="mx">
+<h1>Truck Doctor <span>Kalkulator</span></h1>
+<div class="sub">EK / VK / Marge · Brutto-Netto Lohn</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="T(0)">💰 EK / VK / Marge</button>
+  <button class="tab" onclick="T(1)">👤 Brutto → Netto</button>
+</div>
+
+<!-- ===== TAB 1 ===== -->
+<div class="pnl on" id="t0">
+<div class="c"><div class="ct">👤 Personal</div>
+  <div class="r"><label>Bruttolohn</label><input type="number" id="e1" value="2950" step="50" oninput="K()"><span class="u">€</span></div>
+  <div class="r"><label>AG-Sozialabgaben (~21%)</label><input type="number" id="e2" value="619.50" step="10" oninput="K()"><span class="u">€</span></div>
+  <div class="r2">
+    <div class="r"><label>Verpflegung</label><input type="number" id="e3" value="294" step="10" oninput="K()"><span class="u">€</span></div>
+    <div class="r"><label>Kleidung/PSA</label><input type="number" id="e4" value="0" step="10" oninput="K()"><span class="u">€</span></div>
+  </div>
+</div>
+
+<div class="c"><div class="ct">🚛 Fahrzeug</div>
+  <div class="r"><label>Leasing / Miete (inkl. Vers.)</label><input type="number" id="e5" value="800" step="50" oninput="K()"><span class="u">€</span></div>
+  <div class="r2">
+    <div class="r"><label>Kraftstoff/DKV</label><input type="number" id="e6" value="0" step="50" oninput="K()"><span class="u">€</span></div>
+    <div class="r"><label>Maut/Parken</label><input type="number" id="e7" value="0" step="10" oninput="K()"><span class="u">€</span></div>
+  </div>
+</div>
+
+<div class="c"><div class="ct">🔧 Werkzeug · 📋 Sonstiges</div>
+  <div class="r2">
+    <div class="r"><label>Werkzeug ø</label><input type="number" id="e8" value="0" step="50" oninput="K()"><span class="u">€</span></div>
+    <div class="r"><label>Material</label><input type="number" id="e9" value="0" step="50" oninput="K()"><span class="u">€</span></div>
+  </div>
+  <div class="r2">
+    <div class="r"><label>Unterkunft</label><input type="number" id="e10" value="0" step="50" oninput="K()"><span class="u">€</span></div>
+    <div class="r"><label>Telefon/IT</label><input type="number" id="e11" value="0" step="10" oninput="K()"><span class="u">€</span></div>
+  </div>
+  <div class="r"><label>Sonstige Kosten</label><input type="number" id="e12" value="0" step="50" oninput="K()"><span class="u">€</span></div>
+</div>
+
+<div class="c"><div class="ct">⏱ Arbeitszeit</div>
+  <div class="r2">
+    <div class="r"><label>Arbeitstage/Monat</label><input type="number" id="e13" value="21" step="1" min="1" oninput="K()"><span class="u">T</span></div>
+    <div class="r"><label>Stunden/Tag</label><input type="number" id="e14" value="8" step="0.5" min="1" oninput="K()"><span class="u">h</span></div>
+  </div>
+</div>
+
+<div class="rx bl"><div><div class="rl">Gesamt-EK / Monat</div><div class="rs">Selbstkosten</div></div><div class="rv bl" id="rEK">0 €</div></div>
+<div class="rx bl" style="margin-top:4px"><div><div class="rl">EK / Stunde</div><div class="rs">was 1h wirklich kostet</div></div><div class="rv bl" id="rEKh">0 €</div></div>
+
+<div class="c"><div class="ct">💶 Verkaufspreis</div>
+  <div class="r"><label>VK / Stunde</label><input type="number" id="eVK" value="0" step="1" oninput="K()" style="font-weight:700;border-color:rgba(0,214,143,.4);background:rgba(0,214,143,.06)"><span class="u">€</span></div>
+</div>
+
+<div class="g g2" style="margin-top:6px">
+  <div class="rx gn" style="margin:0"><div class="rl">Marge €/h</div><div class="rv gn" id="rM1">—</div></div>
+  <div class="rx or" style="margin:0"><div class="rl">Marge %</div><div class="rv or" id="rM2">—</div></div>
+</div>
+<div class="bar"><div class="bar-f" id="bf" style="width:0"></div></div>
+<div class="bar-l"><span>0%</span><span>25%</span><span>50%</span><span>75%</span><span>100%</span></div>
+
+<div class="c"><div class="ct">📊 Break-even</div>
+  <div class="g g2" style="margin-top:0">
+    <div class="gi"><div class="l">Mindest-€/h</div><div class="v" id="bS">—</div></div>
+    <div class="gi"><div class="l">BE Std./Monat</div><div class="v" id="bH">—</div></div>
+    <div class="gi"><div class="l">BE Tage/Monat</div><div class="v" id="bT">—</div></div>
+    <div class="gi"><div class="l">Deckung/Monat</div><div class="v" id="bD">—</div></div>
+  </div>
+  <div class="rx gn" style="margin-top:4px"><div class="rl">Hochrechnung / Jahr</div><div class="rv gn" id="bJ">—</div></div>
+</div>
+</div>
+
+<!-- ===== TAB 2 ===== -->
+<div class="pnl" id="t1">
+<div class="c"><div class="ct">👤 Eingaben</div>
+  <div class="r"><label>Bruttolohn</label><input type="number" id="b1" value="2950" step="50" oninput="L()"><span class="u">€</span></div>
+  <div class="r2">
+    <div class="r"><label>Steuerklasse</label><select id="b2" onchange="L()"><option value="1" selected>1</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select><span class="u"></span></div>
+    <div class="r"><label>Kinder</label><select id="b3" onchange="L()"><option value="0" selected>0</option><option value="0.5">0,5</option><option value="1">1</option><option value="2">2</option><option value="3">3+</option></select><span class="u"></span></div>
+  </div>
+  <div class="r2">
+    <div class="r"><label>Kirchensteuer</label><select id="b4" onchange="L()"><option value="0">Nein</option><option value="9" selected>9%</option><option value="8">8%</option></select><span class="u"></span></div>
+    <div class="r"><label>KV-Zusatz</label><input type="number" id="b5" value="1.7" step="0.1" min="0" max="5" oninput="L()"><span class="u">%</span></div>
+  </div>
+</div>
+
+<div class="c"><div class="ct">📉 Abzüge AN</div>
+  <div class="g" style="margin-top:0">
+    <div class="gi"><div class="l">KV</div><div class="v" id="nKV">0</div></div>
+    <div class="gi"><div class="l">RV</div><div class="v" id="nRV">0</div></div>
+    <div class="gi"><div class="l">AV</div><div class="v" id="nAV">0</div></div>
+    <div class="gi"><div class="l">PV</div><div class="v" id="nPV">0</div></div>
+    <div class="gi"><div class="l">∑ Sozial</div><div class="v" id="nSZ">0</div></div>
+    <div class="gi"><div class="l">Lohnsteuer</div><div class="v" id="nLS">0</div></div>
+    <div class="gi"><div class="l">Soli</div><div class="v" id="nSO">0</div></div>
+    <div class="gi"><div class="l">Kirche</div><div class="v" id="nKI">0</div></div>
+    <div class="gi"><div class="l">∑ Abzüge</div><div class="v" id="nAB">0</div></div>
+  </div>
+</div>
+
+<div class="rx gn"><div><div class="rl">Nettolohn</div><div class="rs">Auszahlung Mitarbeiter</div></div><div class="rv gn" id="nNT">0 €</div></div>
+
+<div class="c"><div class="ct">📈 AG obendrauf</div>
+  <div class="g" style="margin-top:0">
+    <div class="gi"><div class="l">KV</div><div class="v" id="gKV">0</div></div>
+    <div class="gi"><div class="l">RV</div><div class="v" id="gRV">0</div></div>
+    <div class="gi"><div class="l">AV</div><div class="v" id="gAV">0</div></div>
+    <div class="gi"><div class="l">PV</div><div class="v" id="gPV">0</div></div>
+    <div class="gi"><div class="l">Insolvenz</div><div class="v" id="gIN">0</div></div>
+    <div class="gi"><div class="l">U1/U2/U3</div><div class="v" id="gUM">0</div></div>
+  </div>
+  <div class="st" style="margin-top:4px"><span>∑ AG-Abgaben</span><span class="v" id="gSZ">0 €</span></div>
+</div>
+
+<div class="rx rd"><div><div class="rl">Brutto Plus</div><div class="rs">AG-Gesamtkosten pro MA</div></div><div class="rv rd" id="nPL">0 €</div></div>
+
+<div class="c"><div class="ct">📊 Übersicht</div>
+  <div class="g g2" style="margin-top:0">
+    <div class="gi"><div class="l">Brutto</div><div class="v" id="zB">0</div></div>
+    <div class="gi"><div class="l">Netto</div><div class="v" id="zN">0</div></div>
+    <div class="gi"><div class="l">Abzüge AN</div><div class="v" id="zA">0%</div></div>
+    <div class="gi"><div class="l">AG-Aufschlag</div><div class="v" id="zG">0%</div></div>
+  </div>
+</div>
+
+<div class="info">Sätze 2025: KV 14,6%+Zusatz · RV 18,6% · AV 2,6% · PV 3,4% (+0,6% kinderlos). Lohnsteuer vereinfacht.</div>
+</div>
+
+</div>
+
+<script>
+function T(n){document.querySelectorAll('.tab').forEach(function(t,i){t.classList.toggle('on',i===n)});document.querySelectorAll('.pnl').forEach(function(p,i){p.classList.toggle('on',i===n)});}
+function f(n){return n.toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+'\u20ac';}
+function V(id){return parseFloat(document.getElementById(id).value)||0;}
+function S(id,t){document.getElementById(id).textContent=t;}
+
+function K(){
+  var ek=V('e1')+V('e2')+V('e3')+V('e4')+V('e5')+V('e6')+V('e7')+V('e8')+V('e9')+V('e10')+V('e11')+V('e12');
+  var tg=V('e13')||21,sh=V('e14')||8,sm=tg*sh;
+  var ekh=sm>0?ek/sm:0;
+  S('rEK',f(ek));S('rEKh',f(ekh));S('bS',f(ekh));
+  var vk=V('eVK');
+  if(vk>0){
+    var m=vk-ekh,mp=m/vk*100;
+    S('rM1',f(m));S('rM2',mp.toFixed(1)+'%');
+    document.getElementById('rM1').style.color=m>=0?'var(--gn)':'var(--rd)';
+    document.getElementById('rM2').style.color=m>=0?'var(--or)':'var(--rd)';
+    var bf=document.getElementById('bf');
+    bf.style.width=Math.max(0,Math.min(100,mp))+'%';
+    bf.style.background=mp>=25?'var(--gn)':mp>=10?'var(--or)':'var(--rd)';
+    var beh=ek/vk,bet=beh/sh,dk=vk*sm-ek;
+    S('bH',beh.toFixed(1)+'h');S('bT',bet.toFixed(1)+'T');S('bD',f(dk));S('bJ',f(dk*12));
+    document.getElementById('bD').style.color=dk>=0?'var(--gn)':'var(--rd)';
+    document.getElementById('bJ').style.color=dk>=0?'var(--gn)':'var(--rd)';
+  }else{S('rM1','\u2014');S('rM2','\u2014');S('bH','\u2014');S('bT','\u2014');S('bD','\u2014');S('bJ','\u2014');document.getElementById('bf').style.width='0';}
+}
+
+function L(){
+  var br=V('b1'),stk=parseInt(document.getElementById('b2').value),ki=parseFloat(document.getElementById('b3').value)||0,
+      krP=parseFloat(document.getElementById('b4').value)||0,kvZ=V('b5');
+  var aKV=br*(7.3+kvZ/2)/100,aRV=br*9.3/100,aAV=br*1.3/100,pvZ=ki>0?0:.6,aPV=br*((3.4+pvZ)/2)/100;
+  var aSz=aKV+aRV+aAV+aPV;
+  var gKV=br*(7.3+kvZ/2)/100,gRV=br*9.3/100,gAV=br*1.3/100,gPV=br*1.7/100,gIN=br*.06/100,gUM=br*1.5/100;
+  var gSz=gKV+gRV+gAV+gPV+gIN+gUM;
+  var jBr=br*12,zvE=jBr-1230-36-aSz*12;if(zvE<0)zvE=0;
+  var lJ=eC(zvE,stk),lM=lJ/12,soG=stk===3?36260:18130,soJ=lJ>soG?lJ*5.5/100:0,soM=soJ/12,krM=lM*krP/100;
+  var stM=lM+soM+krM,ab=aSz+stM,nt=br-ab,pl=br+gSz;
+  S('nKV',f(aKV));S('nRV',f(aRV));S('nAV',f(aAV));S('nPV',f(aPV));S('nSZ',f(aSz));
+  S('nLS',f(lM));S('nSO',f(soM));S('nKI',f(krM));S('nAB',f(ab));S('nNT',f(nt));
+  S('gKV',f(gKV));S('gRV',f(gRV));S('gAV',f(gAV));S('gPV',f(gPV));S('gIN',f(gIN));S('gUM',f(gUM));S('gSZ',f(gSz));
+  S('nPL',f(pl));S('zB',f(br));S('zN',f(nt));
+  S('zA',(br>0?(ab/br*100).toFixed(1):0)+'%');S('zG',(br>0?(gSz/br*100).toFixed(1):0)+'%');
+}
+function eC(z,s){var e;if(s===3)e=eT(z/2)*2;else if(s===5)e=eT(z)*1.3;else if(s===6)e=eT(z+11784);else e=eT(z);return Math.max(0,e);}
+function eT(z){if(z<=11784)return 0;if(z<=17005){var y=(z-11784)/1e4;return(922.98*y+1400)*y;}if(z<=66760){var w=(z-17005)/1e4;return(181.19*w+2397)*w+1025.38;}if(z<=277825)return .42*z-10602.13;return .45*z-18936.88;}
+
+document.addEventListener('DOMContentLoaded',function(){K();L();});
+</script>
+</body>
+</html>
